@@ -215,9 +215,12 @@ function groupTasksByDate(tasks) {
 
 // Add Task UI
 function renderAddTaskForm() {
-    const list = document.getElementById('task-list');
-    if (!list) return;
-    const formHtml = `
+    const container = document.getElementById('add-task-form-container');
+    if (!container) {
+        console.warn('Add task form container not found!');
+        return;
+    }
+    container.innerHTML = `
         <form id="add-task-form" class="add-task-form">
             <input type="text" id="new-task-title" placeholder="Task title" required />
             <input type="date" id="new-task-date" />
@@ -225,7 +228,6 @@ function renderAddTaskForm() {
             <button type="submit">Add Task</button>
         </form>
     `;
-    list.insertAdjacentHTML('afterbegin', formHtml);
     document.getElementById('add-task-form').onsubmit = function(e) {
         e.preventDefault();
         const title = document.getElementById('new-task-title').value.trim();
@@ -233,11 +235,13 @@ function renderAddTaskForm() {
         const project = document.getElementById('new-task-project').value.trim() || 'Tasks';
         if (title) {
             addTask({ title, dueDate, project });
-            // Only reset the form, do not re-render the whole page
             this.reset();
             renderTaskList();
         }
     };
+    // Auto-focus the title input for better UX
+    document.getElementById('new-task-title').focus();
+    console.log('Add task form rendered');
 }
 
 // Statistics and Progress Tracking
@@ -250,31 +254,33 @@ function renderStats() {
     const estimatedTime = total * 25; // 25 min per task (Pomodoro)
     const elapsedTime = completed * 25;
     statsSection.innerHTML = `
-        <div class="stats-box">
-            <h3>Estimated Time</h3>
-            <div class="stat-value">${estimatedTime}m</div>
-        </div>
-        <div class="stats-box">
-            <h3>Tasks to be Completed</h3>
-            <div class="stat-value">${total - completed}</div>
-        </div>
-        <div class="stats-box">
-            <h3>Elapsed Time</h3>
-            <div class="stat-value">${elapsedTime}m</div>
-        </div>
-        <div class="stats-box">
-            <h3>Completed Tasks</h3>
-            <div class="stat-value">${completed}</div>
-        </div>
-        <div class="stats-box" style="flex:2;">
-            <h3>Progress</h3>
-            <div class="progress-bar"><div class="progress-bar-inner" style="width:${percent}%;"></div></div>
-            <div style="font-size:0.95rem; color:#888; margin-top:0.3rem;">${percent}% completed</div>
+        <div class="stats-container">
+            <div class="stats-box">
+                <div class="stat-label">Estimated Time</div>
+                <div class="stat-value">${estimatedTime}m</div>
+            </div>
+            <div class="stats-box">
+                <div class="stat-label">Tasks to be Completed</div>
+                <div class="stat-value">${total - completed}</div>
+            </div>
+            <div class="stats-box">
+                <div class="stat-label">Elapsed Time</div>
+                <div class="stat-value">${elapsedTime}m</div>
+            </div>
+            <div class="stats-box">
+                <div class="stat-label">Completed Tasks</div>
+                <div class="stat-value">${completed}</div>
+            </div>
+            <div class="stats-box stats-progress">
+                <div class="stat-label">Progress</div>
+                <div class="progress-bar"><div class="progress-bar-inner" style="width:${percent}%;"></div></div>
+                <div class="progress-label">${percent}% completed</div>
+            </div>
         </div>
     `;
 }
 
-// Update renderTaskList to also update stats
+// Update renderTaskList to NOT re-render the add task form
 function renderTaskList() {
     const list = document.getElementById('task-list');
     if (!list) return;
@@ -288,9 +294,10 @@ function renderTaskList() {
     const grouped = groupTasksByDate(filtered);
     let html = '<h2>Tasks</h2>';
     list.innerHTML = html;
-    renderAddTaskForm();
+    // Do NOT call renderAddTaskForm here
     if (filtered.length === 0) {
-        list.innerHTML += '<p>No tasks for this view.</p>';
+        // Improved empty state message
+        list.innerHTML += `<p>No tasks for "${currentFilter}". Add your first task above!</p>`;
     } else {
         list.innerHTML += Object.entries(grouped).map(([date, group]) =>
             `<div class="task-group"><div class="group-label">${date}</div><ul class="tasks">` +
@@ -423,4 +430,5 @@ window.updateTaskNotes = updateTaskNotes;
 window.onload = function() {
     renderSidebar();
     renderTaskList();
+    renderAddTaskForm();
 };
