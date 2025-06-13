@@ -1,0 +1,12 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Open in Browser",
+            "type": "shell",
+            "command": "start msedge src/index.html",
+            "group": "build",
+            "problemMatcher": []
+        }
+    ]
+}
