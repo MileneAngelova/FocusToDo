@@ -347,22 +347,48 @@ function renderTaskList() {
 }
 
 // Pomodoro Timer Logic
+// Pomodoro durations (customizable)
 let pomodoroDuration = 25 * 60; // 25 minutes in seconds
+let shortBreakDuration = 5 * 60; // 5 minutes
+let longBreakDuration = 15 * 60; // 15 minutes
 let pomodoroTimeLeft = pomodoroDuration;
 let pomodoroInterval = null;
 let isPomodoroRunning = false;
+let currentTimerType = 'pomodoro'; // 'pomodoro', 'short', 'long'
 
-function updatePomodoroDisplay() {
-    const timerSpan = document.querySelector('#pomodoro-timer span');
-    if (timerSpan) {
-        const min = String(Math.floor(pomodoroTimeLeft / 60)).padStart(2, '0');
-        const sec = String(Math.floor(pomodoroTimeLeft % 60)).padStart(2, '0');
-        timerSpan.textContent = `${min}:${sec}`;
-    }
-    const btn = document.getElementById('start-timer');
-    if (btn) {
-        btn.textContent = isPomodoroRunning ? 'Stop' : 'Start';
-    }
+// Render Pomodoro controls
+function renderPomodoroControls() {
+    const timerDiv = document.getElementById('pomodoro-timer');
+    if (!timerDiv) return;
+    timerDiv.innerHTML = `
+        <span id="pomodoro-time">25:00</span>
+        <button id="start-timer">Start</button>
+        <button id="short-break">Short Break</button>
+        <button id="long-break">Long Break</button>
+        <button id="pomodoro-settings">⚙️</button>
+        <div id="pomodoro-settings-panel" style="display:none;">
+            <label>Pomodoro: <input type="number" id="pomodoro-mins" min="1" max="60" value="${pomodoroDuration/60}"> min</label>
+            <label>Short Break: <input type="number" id="short-mins" min="1" max="30" value="${shortBreakDuration/60}"> min</label>
+            <label>Long Break: <input type="number" id="long-mins" min="1" max="60" value="${longBreakDuration/60}"> min</label>
+            <button id="save-pomodoro-settings">Save</button>
+        </div>
+    `;
+    document.getElementById('start-timer').onclick = startPomodoro;
+    document.getElementById('short-break').onclick = startShortBreak;
+    document.getElementById('long-break').onclick = startLongBreak;
+    document.getElementById('pomodoro-settings').onclick = function() {
+        const panel = document.getElementById('pomodoro-settings-panel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    };
+    document.getElementById('save-pomodoro-settings').onclick = function() {
+        pomodoroDuration = Math.max(1, parseInt(document.getElementById('pomodoro-mins').value, 10)) * 60;
+        shortBreakDuration = Math.max(1, parseInt(document.getElementById('short-mins').value, 10)) * 60;
+        longBreakDuration = Math.max(1, parseInt(document.getElementById('long-mins').value, 10)) * 60;
+        saveData();
+        resetPomodoro();
+        renderPomodoroControls();
+    };
+    updatePomodoroDisplay();
 }
 
 function startPomodoro() {
@@ -388,6 +414,34 @@ function startPomodoro() {
     updatePomodoroDisplay();
 }
 
+function startShortBreak() {
+    clearInterval(pomodoroInterval);
+    pomodoroTimeLeft = shortBreakDuration;
+    currentTimerType = 'short';
+    isPomodoroRunning = false;
+    updatePomodoroDisplay();
+}
+function startLongBreak() {
+    clearInterval(pomodoroInterval);
+    pomodoroTimeLeft = longBreakDuration;
+    currentTimerType = 'long';
+    isPomodoroRunning = false;
+    updatePomodoroDisplay();
+}
+
+function updatePomodoroDisplay() {
+    const timerSpan = document.getElementById('pomodoro-time') || document.querySelector('#pomodoro-timer span');
+    if (timerSpan) {
+        const min = String(Math.floor(pomodoroTimeLeft / 60)).padStart(2, '0');
+        const sec = String(Math.floor(pomodoroTimeLeft % 60)).padStart(2, '0');
+        timerSpan.textContent = `${min}:${sec}`;
+    }
+    const btn = document.getElementById('start-timer');
+    if (btn) {
+        btn.textContent = isPomodoroRunning ? 'Stop' : 'Start';
+    }
+}
+
 // Reset Pomodoro (optional, not in UI yet)
 function resetPomodoro() {
     clearInterval(pomodoroInterval);
@@ -395,12 +449,6 @@ function resetPomodoro() {
     isPomodoroRunning = false;
     updatePomodoroDisplay();
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    const btn = document.getElementById('start-timer');
-    if (btn) btn.onclick = startPomodoro;
-    updatePomodoroDisplay();
-});
 
 // Pomodoro Session Tracking
 let pomodoroSessions = {};
@@ -423,15 +471,24 @@ function saveData() {
     localStorage.setItem('focus_todo_tasks', JSON.stringify(tasks));
     localStorage.setItem('focus_todo_projects', JSON.stringify(projects));
     localStorage.setItem('focus_todo_pomodoros', JSON.stringify(pomodoroSessions));
+    localStorage.setItem('focus_todo_durations', JSON.stringify({pomodoroDuration, shortBreakDuration, longBreakDuration}));
 }
 function loadData() {
     const savedTasks = localStorage.getItem('focus_todo_tasks');
     const savedProjects = localStorage.getItem('focus_todo_projects');
     const savedPomodoros = localStorage.getItem('focus_todo_pomodoros');
+    const savedDurations = localStorage.getItem('focus_todo_durations');
     if (savedTasks) tasks = JSON.parse(savedTasks);
     if (savedProjects) projects = JSON.parse(savedProjects);
     if (savedPomodoros) pomodoroSessions = JSON.parse(savedPomodoros);
+    if (savedDurations) {
+        const d = JSON.parse(savedDurations);
+        pomodoroDuration = d.pomodoroDuration || pomodoroDuration;
+        shortBreakDuration = d.shortBreakDuration || shortBreakDuration;
+        longBreakDuration = d.longBreakDuration || longBreakDuration;
+    }
 }
+
 // Patch all mutating functions to save after change
 ['addTask','editTask','deleteTask','toggleTaskCompletion','addSubtask','toggleSubtaskCompletion','deleteSubtask','updateTaskNotes','addProject'].forEach(fn => {
     const orig = window[fn] || eval(fn);
@@ -457,4 +514,5 @@ window.onload = function() {
     renderSidebar();
     renderTaskList();
     renderAddTaskForm();
+    renderPomodoroControls();
 };
