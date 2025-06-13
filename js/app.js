@@ -61,14 +61,83 @@ function toggleTaskCompletion(id) {
     }
 }
 
-// Render Task List
+// Task list filters and grouping by date
+const FILTERS = [
+    { label: 'Today', fn: t => isToday(t.dueDate) },
+    { label: 'Tomorrow', fn: t => isTomorrow(t.dueDate) },
+    { label: 'This Week', fn: t => isThisWeek(t.dueDate) },
+    { label: 'Planned', fn: t => !!t.dueDate && !isToday(t.dueDate) && !isTomorrow(t.dueDate) && !isThisWeek(t.dueDate) },
+    { label: 'Completed', fn: t => t.completed }
+];
+let currentFilter = 'Today';
+
+function isToday(dateStr) {
+    if (!dateStr) return false;
+    const today = new Date();
+    const d = new Date(dateStr);
+    return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+}
+function isTomorrow(dateStr) {
+    if (!dateStr) return false;
+    const today = new Date();
+    const d = new Date(dateStr);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    return d.getFullYear() === tomorrow.getFullYear() && d.getMonth() === tomorrow.getMonth() && d.getDate() === tomorrow.getDate();
+}
+function isThisWeek(dateStr) {
+    if (!dateStr) return false;
+    const today = new Date();
+    const d = new Date(dateStr);
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay());
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    return d >= weekStart && d <= weekEnd;
+}
+
+function setFilter(label) {
+    currentFilter = label;
+    renderTaskList();
+    renderSidebar();
+}
+
+function renderSidebar() {
+    const sidebar = document.querySelector('.sidebar nav ul');
+    if (!sidebar) return;
+    sidebar.innerHTML = FILTERS.map(f => `<li class="${currentFilter === f.label ? 'active' : ''}" onclick="setFilter('${f.label}')">${f.label}</li>`).join('');
+}
+window.setFilter = setFilter;
+
+// Group tasks by date for display
+function groupTasksByDate(tasks) {
+    const groups = {};
+    tasks.forEach(task => {
+        let key = 'No Date';
+        if (task.dueDate) {
+            const d = new Date(task.dueDate);
+            key = d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(task);
+    });
+    return groups;
+}
+
+// Update renderTaskList to use filter and grouping
 function renderTaskList() {
     const list = document.getElementById('task-list');
     if (!list) return;
-    list.innerHTML = '<h2>Tasks</h2>' +
-        (tasks.length === 0 ? '<p>No tasks yet.</p>' :
-            '<ul class="tasks">' +
-            tasks.map(task => `
+    const filterObj = FILTERS.find(f => f.label === currentFilter);
+    const filtered = filterObj ? tasks.filter(filterObj.fn) : tasks;
+    const grouped = groupTasksByDate(filtered);
+    let html = '<h2>Tasks</h2>';
+    if (filtered.length === 0) {
+        html += '<p>No tasks for this view.</p>';
+    } else {
+        html += Object.entries(grouped).map(([date, group]) =>
+            `<div class="task-group"><div class="group-label">${date}</div><ul class="tasks">` +
+            group.map(task => `
                 <li class="task${task.completed ? ' completed' : ''}">
                     <span class="circle" onclick="toggleTaskCompletion('${task.id}')"></span>
                     <span class="title">${task.title}</span>
@@ -76,7 +145,10 @@ function renderTaskList() {
                     <button onclick="deleteTask('${task.id}')">Delete</button>
                 </li>
             `).join('') +
-            '</ul>');
+            '</ul></div>'
+        ).join('');
+    }
+    list.innerHTML = html;
 }
 
 // Expose functions for inline event handlers
@@ -84,4 +156,7 @@ window.toggleTaskCompletion = toggleTaskCompletion;
 window.deleteTask = deleteTask;
 
 // Initial render
-window.onload = renderTaskList;
+window.onload = function() {
+    renderSidebar();
+    renderTaskList();
+};
