@@ -17,6 +17,40 @@ class Task {
 // Task management state
 let tasks = [];
 
+// Project management state
+let projects = ['Tasks'];
+
+function addProject(name) {
+    if (name && !projects.includes(name)) {
+        projects.push(name);
+        renderSidebar();
+    }
+}
+
+function renderProjectList() {
+    const sidebar = document.querySelector('.sidebar nav ul');
+    if (!sidebar) return;
+    sidebar.innerHTML += '<li class="project-label">Projects</li>' +
+        projects.map(p => `<li class="${currentFilter === p ? 'active' : ''}" onclick="setProjectFilter('${p}')">${p}</li>`).join('');
+    sidebar.innerHTML += `<li><input type="text" id="new-project-input" placeholder="+ Add Project" onkeydown="if(event.key==='Enter'){addProjectFromInput();}"></li>`;
+}
+
+function setProjectFilter(project) {
+    currentFilter = project;
+    renderTaskList();
+    renderSidebar();
+}
+window.setProjectFilter = setProjectFilter;
+
+function addProjectFromInput() {
+    const input = document.getElementById('new-project-input');
+    if (input && input.value.trim()) {
+        addProject(input.value.trim());
+        input.value = '';
+    }
+}
+window.addProjectFromInput = addProjectFromInput;
+
 // Utility: Generate unique ID
 function generateId() {
     return '_' + Math.random().toString(36).substr(2, 9);
@@ -34,7 +68,7 @@ function addTask({ title, dueDate, project, subtasks, notes }) {
         completed: false
     });
     tasks.push(task);
-    renderTaskList();
+    // Do NOT call renderTaskList here, as the form already does it after add
 }
 
 // Edit Task
@@ -132,6 +166,24 @@ function isThisWeek(dateStr) {
     return d >= weekStart && d <= weekEnd;
 }
 
+// Helper: check if a date is overdue or upcoming
+function isOverdue(dateStr) {
+    if (!dateStr) return false;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const d = new Date(dateStr);
+    d.setHours(0,0,0,0);
+    return d < today;
+}
+function isUpcoming(dateStr) {
+    if (!dateStr) return false;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const d = new Date(dateStr);
+    d.setHours(0,0,0,0);
+    return d > today;
+}
+
 function setFilter(label) {
     currentFilter = label;
     renderTaskList();
@@ -142,6 +194,7 @@ function renderSidebar() {
     const sidebar = document.querySelector('.sidebar nav ul');
     if (!sidebar) return;
     sidebar.innerHTML = FILTERS.map(f => `<li class="${currentFilter === f.label ? 'active' : ''}" onclick="setFilter('${f.label}')">${f.label}</li>`).join('');
+    renderProjectList();
 }
 window.setFilter = setFilter;
 
@@ -160,23 +213,98 @@ function groupTasksByDate(tasks) {
     return groups;
 }
 
-// Update renderTaskList to use filter and grouping
+// Add Task UI
+function renderAddTaskForm() {
+    const list = document.getElementById('task-list');
+    if (!list) return;
+    const formHtml = `
+        <form id="add-task-form" class="add-task-form">
+            <input type="text" id="new-task-title" placeholder="Task title" required />
+            <input type="date" id="new-task-date" />
+            <input type="text" id="new-task-project" placeholder="Project (optional)" />
+            <button type="submit">Add Task</button>
+        </form>
+    `;
+    list.insertAdjacentHTML('afterbegin', formHtml);
+    document.getElementById('add-task-form').onsubmit = function(e) {
+        e.preventDefault();
+        const title = document.getElementById('new-task-title').value.trim();
+        const dueDate = document.getElementById('new-task-date').value;
+        const project = document.getElementById('new-task-project').value.trim() || 'Tasks';
+        if (title) {
+            addTask({ title, dueDate, project });
+            // Only reset the form, do not re-render the whole page
+            this.reset();
+            renderTaskList();
+        }
+    };
+}
+
+// Statistics and Progress Tracking
+function renderStats() {
+    const statsSection = document.getElementById('stats');
+    if (!statsSection) return;
+    const total = tasks.length;
+    const completed = tasks.filter(t => t.completed).length;
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const estimatedTime = total * 25; // 25 min per task (Pomodoro)
+    const elapsedTime = completed * 25;
+    statsSection.innerHTML = `
+        <div class="stats-box">
+            <h3>Estimated Time</h3>
+            <div class="stat-value">${estimatedTime}m</div>
+        </div>
+        <div class="stats-box">
+            <h3>Tasks to be Completed</h3>
+            <div class="stat-value">${total - completed}</div>
+        </div>
+        <div class="stats-box">
+            <h3>Elapsed Time</h3>
+            <div class="stat-value">${elapsedTime}m</div>
+        </div>
+        <div class="stats-box">
+            <h3>Completed Tasks</h3>
+            <div class="stat-value">${completed}</div>
+        </div>
+        <div class="stats-box" style="flex:2;">
+            <h3>Progress</h3>
+            <div class="progress-bar"><div class="progress-bar-inner" style="width:${percent}%;"></div></div>
+            <div style="font-size:0.95rem; color:#888; margin-top:0.3rem;">${percent}% completed</div>
+        </div>
+    `;
+}
+
+// Update renderTaskList to also update stats
 function renderTaskList() {
     const list = document.getElementById('task-list');
     if (!list) return;
-    const filterObj = FILTERS.find(f => f.label === currentFilter);
-    const filtered = filterObj ? tasks.filter(filterObj.fn) : tasks;
+    let filtered;
+    if (projects.includes(currentFilter)) {
+        filtered = tasks.filter(t => t.project === currentFilter);
+    } else {
+        const filterObj = FILTERS.find(f => f.label === currentFilter);
+        filtered = filterObj ? tasks.filter(filterObj.fn) : tasks;
+    }
     const grouped = groupTasksByDate(filtered);
     let html = '<h2>Tasks</h2>';
+    list.innerHTML = html;
+    renderAddTaskForm();
     if (filtered.length === 0) {
-        html += '<p>No tasks for this view.</p>';
+        list.innerHTML += '<p>No tasks for this view.</p>';
     } else {
-        html += Object.entries(grouped).map(([date, group]) =>
+        list.innerHTML += Object.entries(grouped).map(([date, group]) =>
             `<div class="task-group"><div class="group-label">${date}</div><ul class="tasks">` +
-            group.map(task => `
-                <li class="task${task.completed ? ' completed' : ''}">
+            group.map(task => {
+                let dueClass = '';
+                if (task.dueDate) {
+                    if (isOverdue(task.dueDate) && !task.completed) dueClass = 'overdue';
+                    else if (isUpcoming(task.dueDate)) dueClass = 'upcoming';
+                }
+                return `
+                <li class="task${task.completed ? ' completed' : ''} ${dueClass}">
                     <span class="circle" onclick="toggleTaskCompletion('${task.id}')"></span>
                     <span class="title">${task.title}</span>
+                    <span class="project">${task.project}</span>
                     <span class="due-date">${task.dueDate ? task.dueDate : ''}</span>
                     <button onclick="deleteTask('${task.id}')">Delete</button>
                     <div class="subtasks">
@@ -197,12 +325,68 @@ function renderTaskList() {
                         <textarea placeholder="Add notes..." onchange="updateTaskNotes('${task.id}', this.value)">${task.notes || ''}</textarea>
                     </div>
                 </li>
-            `).join('') +
+                `;
+            }).join('') +
             '</ul></div>'
         ).join('');
     }
-    list.innerHTML = html;
+    renderStats();
 }
+
+// Pomodoro Timer Logic
+let pomodoroDuration = 25 * 60; // 25 minutes in seconds
+let pomodoroTimeLeft = pomodoroDuration;
+let pomodoroInterval = null;
+let isPomodoroRunning = false;
+
+function updatePomodoroDisplay() {
+    const timerSpan = document.querySelector('#pomodoro-timer span');
+    if (timerSpan) {
+        const min = String(Math.floor(pomodoroTimeLeft / 60)).padStart(2, '0');
+        const sec = String(Math.floor(pomodoroTimeLeft % 60)).padStart(2, '0');
+        timerSpan.textContent = `${min}:${sec}`;
+    }
+    const btn = document.getElementById('start-timer');
+    if (btn) {
+        btn.textContent = isPomodoroRunning ? 'Stop' : 'Start';
+    }
+}
+
+function startPomodoro() {
+    if (isPomodoroRunning) {
+        clearInterval(pomodoroInterval);
+        isPomodoroRunning = false;
+    } else {
+        if (pomodoroTimeLeft <= 0) pomodoroTimeLeft = pomodoroDuration;
+        pomodoroInterval = setInterval(() => {
+            if (pomodoroTimeLeft > 0) {
+                pomodoroTimeLeft--;
+                updatePomodoroDisplay();
+            } else {
+                clearInterval(pomodoroInterval);
+                isPomodoroRunning = false;
+                updatePomodoroDisplay();
+                alert('Pomodoro session complete!');
+            }
+        }, 1000);
+        isPomodoroRunning = true;
+    }
+    updatePomodoroDisplay();
+}
+
+// Reset Pomodoro (optional, not in UI yet)
+function resetPomodoro() {
+    clearInterval(pomodoroInterval);
+    pomodoroTimeLeft = pomodoroDuration;
+    isPomodoroRunning = false;
+    updatePomodoroDisplay();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('start-timer');
+    if (btn) btn.onclick = startPomodoro;
+    updatePomodoroDisplay();
+});
 
 // Expose functions for inline event handlers
 window.toggleTaskCompletion = toggleTaskCompletion;
