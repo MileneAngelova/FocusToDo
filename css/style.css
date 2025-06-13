@@ -8,3 +8,92 @@ body {
 #app {
     min-height: 100vh;
 }
+
+.header {
+    background: #fff;
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    text-align: center;
+}
+
+.container {
+    display: flex;
+    min-height: 80vh;
+}
+
+.sidebar {
+    width: 220px;
+    background: #f0f2f5;
+    padding: 2rem 1rem;
+    border-right: 1px solid #e0e0e0;
+}
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+.sidebar li {
+    margin: 1rem 0;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+.sidebar li:hover {
+    background: #e6eaf1;
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+#task-list, #stats {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    padding: 1.5rem;
+}
+
+.footer {
+    background: #fff;
+    padding: 1rem 0;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.03);
+    text-align: center;
+    position: sticky;
+    bottom: 0;
+    width: 100%;
+}
+#pomodoro-timer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    font-size: 1.5rem;
+}
+#start-timer {
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    background: #4f8cff;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+#start-timer:hover {
+    background: #2563c9;
+}
+
+@media (max-width: 800px) {
+    .container {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 1rem;
+    }
+}
