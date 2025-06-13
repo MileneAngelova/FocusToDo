@@ -253,6 +253,8 @@ function renderStats() {
     const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
     const estimatedTime = total * 25; // 25 min per task (Pomodoro)
     const elapsedTime = completed * 25;
+    const todayKey = getTodayKey();
+    const todayPomodoros = pomodoroSessions[todayKey] || 0;
     statsSection.innerHTML = `
         <div class="stats-container">
             <div class="stats-box">
@@ -270,6 +272,10 @@ function renderStats() {
             <div class="stats-box">
                 <div class="stat-label">Completed Tasks</div>
                 <div class="stat-value">${completed}</div>
+            </div>
+            <div class="stats-box">
+                <div class="stat-label">Today's Pomodoros</div>
+                <div class="stat-value">${todayPomodoros}</div>
             </div>
             <div class="stats-box stats-progress">
                 <div class="stat-label">Progress</div>
@@ -373,6 +379,7 @@ function startPomodoro() {
                 clearInterval(pomodoroInterval);
                 isPomodoroRunning = false;
                 updatePomodoroDisplay();
+                incrementPomodoroSession();
                 alert('Pomodoro session complete!');
             }
         }, 1000);
@@ -395,16 +402,35 @@ document.addEventListener('DOMContentLoaded', function() {
     updatePomodoroDisplay();
 });
 
+// Pomodoro Session Tracking
+let pomodoroSessions = {};
+
+function getTodayKey() {
+    const today = new Date();
+    return today.toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
+function incrementPomodoroSession() {
+    const key = getTodayKey();
+    if (!pomodoroSessions[key]) pomodoroSessions[key] = 0;
+    pomodoroSessions[key]++;
+    saveData();
+    renderStats();
+}
+
 // Data Persistence: Save and Load from localStorage
 function saveData() {
     localStorage.setItem('focus_todo_tasks', JSON.stringify(tasks));
     localStorage.setItem('focus_todo_projects', JSON.stringify(projects));
+    localStorage.setItem('focus_todo_pomodoros', JSON.stringify(pomodoroSessions));
 }
 function loadData() {
     const savedTasks = localStorage.getItem('focus_todo_tasks');
     const savedProjects = localStorage.getItem('focus_todo_projects');
+    const savedPomodoros = localStorage.getItem('focus_todo_pomodoros');
     if (savedTasks) tasks = JSON.parse(savedTasks);
     if (savedProjects) projects = JSON.parse(savedProjects);
+    if (savedPomodoros) pomodoroSessions = JSON.parse(savedPomodoros);
 }
 // Patch all mutating functions to save after change
 ['addTask','editTask','deleteTask','toggleTaskCompletion','addSubtask','toggleSubtaskCompletion','deleteSubtask','updateTaskNotes','addProject'].forEach(fn => {
