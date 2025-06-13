@@ -406,6 +406,7 @@ function startPomodoro() {
                 isPomodoroRunning = false;
                 updatePomodoroDisplay();
                 incrementPomodoroSession();
+                notifyPomodoroEnd();
                 alert('Pomodoro session complete!');
             }
         }, 1000);
