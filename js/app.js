@@ -388,6 +388,29 @@ document.addEventListener('DOMContentLoaded', function() {
     updatePomodoroDisplay();
 });
 
+// Data Persistence: Save and Load from localStorage
+function saveData() {
+    localStorage.setItem('focus_todo_tasks', JSON.stringify(tasks));
+    localStorage.setItem('focus_todo_projects', JSON.stringify(projects));
+}
+function loadData() {
+    const savedTasks = localStorage.getItem('focus_todo_tasks');
+    const savedProjects = localStorage.getItem('focus_todo_projects');
+    if (savedTasks) tasks = JSON.parse(savedTasks);
+    if (savedProjects) projects = JSON.parse(savedProjects);
+}
+// Patch all mutating functions to save after change
+['addTask','editTask','deleteTask','toggleTaskCompletion','addSubtask','toggleSubtaskCompletion','deleteSubtask','updateTaskNotes','addProject'].forEach(fn => {
+    const orig = window[fn] || eval(fn);
+    window[fn] = function(...args) {
+        const result = orig.apply(this, args);
+        saveData();
+        return result;
+    };
+});
+// Load data on app start
+loadData();
+
 // Expose functions for inline event handlers
 window.toggleTaskCompletion = toggleTaskCompletion;
 window.deleteTask = deleteTask;
