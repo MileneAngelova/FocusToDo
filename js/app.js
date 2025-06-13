@@ -307,44 +307,52 @@ function renderTaskList() {
     } else {
         list.innerHTML += Object.entries(grouped).map(([date, group]) =>
             `<div class="task-group"><div class="group-label">${date}</div><ul class="tasks">` +
-            group.map(task => {
-                let dueClass = '';
-                if (task.dueDate) {
-                    if (isOverdue(task.dueDate) && !task.completed) dueClass = 'overdue';
-                    else if (isUpcoming(task.dueDate)) dueClass = 'upcoming';
-                }
-                return `
-                <li class="task${task.completed ? ' completed' : ''} ${dueClass}">
-                    <span class="circle" onclick="toggleTaskCompletion('${task.id}')"></span>
+            group.map(task =>
+                `<li class="task${task.completed ? ' completed' : ''}" onclick="renderTaskDetails('${task.id}')">
+                    <span class="circle"></span>
+                    <span class="pomodoro-dot"><span class="dot"></span></span>
                     <span class="title">${task.title}</span>
-                    <span class="project">${task.project}</span>
-                    <span class="due-date">${task.dueDate ? task.dueDate : ''}</span>
-                    <button onclick="deleteTask('${task.id}')">Delete</button>
-                    <div class="subtasks">
-                        <strong>Subtasks:</strong>
-                        <ul>
-                            ${task.subtasks.map(st => `
-                                <li class="subtask${st.completed ? ' completed' : ''}">
-                                    <input type="checkbox" ${st.completed ? 'checked' : ''} onclick="toggleSubtaskCompletion('${task.id}', '${st.id}')">
-                                    <span>${st.title}</span>
-                                    <button onclick="deleteSubtask('${task.id}', '${st.id}')">x</button>
-                                </li>
-                            `).join('')}
-                        </ul>
-                        <input type="text" placeholder="Add subtask..." onkeydown="if(event.key==='Enter'){addSubtask('${task.id}', this.value); this.value='';}">
-                    </div>
-                    <div class="notes">
-                        <strong>Notes:</strong>
-                        <textarea placeholder="Add notes..." onchange="updateTaskNotes('${task.id}', this.value)">${task.notes || ''}</textarea>
-                    </div>
-                </li>
-                `;
-            }).join('') +
+                    <span class="due-date">${task.dueDate ? new Date(task.dueDate).toLocaleDateString(undefined, { day: '2-digit', month: 'short' }) : ''}</span>
+                </li>`
+            ).join('') +
             '</ul></div>'
         ).join('');
     }
     renderStats();
 }
+
+// Render Task Details Panel
+function renderTaskDetails(taskId) {
+    const detailsSection = document.getElementById('task-details');
+    if (!detailsSection) return;
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) {
+        detailsSection.innerHTML = '<div class="empty-details">Select a task to see details.</div>';
+        return;
+    }
+    // Pomodoro stats for this task (future: per-task sessions)
+    detailsSection.innerHTML = `
+        <div class="details-header">
+            <span class="details-title">${task.title}</span>
+            <span class="details-project">${task.project}</span>
+        </div>
+        <div class="details-row"><strong>Due Date:</strong> <span>${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'None'}</span></div>
+        <div class="details-row"><strong>Notes:</strong><br><textarea onchange="updateTaskNotes('${task.id}', this.value)">${task.notes || ''}</textarea></div>
+        <div class="details-row"><strong>Subtasks:</strong>
+            <ul class="details-subtasks">
+                ${task.subtasks.map(st => `
+                    <li class="subtask${st.completed ? ' completed' : ''}">
+                        <input type="checkbox" ${st.completed ? 'checked' : ''} onclick="toggleSubtaskCompletion('${task.id}', '${st.id}')">
+                        <span>${st.title}</span>
+                        <button onclick="deleteSubtask('${task.id}', '${st.id}')">x</button>
+                    </li>
+                `).join('')}
+            </ul>
+            <input type="text" placeholder="Add subtask..." onkeydown="if(event.key==='Enter'){addSubtask('${task.id}', this.value); this.value='';}">
+        </div>
+    `;
+}
+window.renderTaskDetails = renderTaskDetails;
 
 // Pomodoro Timer Logic
 // Pomodoro durations (customizable)
@@ -362,9 +370,9 @@ function renderPomodoroControls() {
     if (!timerDiv) return;
     timerDiv.innerHTML = `
         <span id="pomodoro-time">25:00</span>
-        <button id="start-timer">Start</button>
-        <button id="short-break">Short Break</button>
-        <button id="long-break">Long Break</button>
+        <button id="start-timer"><span id="start-timer-icon">▶️</span></button>
+        <button id="short-break" title="Short Break"><span>☕</span></button>
+        <button id="long-break" title="Long Break"><span>🛏️</span></button>
         <button id="pomodoro-settings">⚙️</button>
         <div id="pomodoro-settings-panel" style="display:none;">
             <label>Pomodoro: <input type="number" id="pomodoro-mins" min="1" max="60" value="${pomodoroDuration/60}"> min</label>
@@ -459,8 +467,9 @@ function updatePomodoroDisplay() {
         timerSpan.textContent = `${min}:${sec}`;
     }
     const btn = document.getElementById('start-timer');
-    if (btn) {
-        btn.textContent = isPomodoroRunning ? 'Stop' : 'Start';
+    const icon = document.getElementById('start-timer-icon');
+    if (btn && icon) {
+        icon.textContent = isPomodoroRunning ? '⏸️' : '▶️';
     }
 }
 
