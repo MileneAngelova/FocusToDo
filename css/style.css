@@ -10,7 +10,7 @@ body {
 }
 
 .header {
-    background: #fff;
+    background: #9CADCE;
     padding: 1rem 2rem;
     box-shadow: 0 2px 4px rgba(0,0,0,0.03);
     text-align: center;
@@ -23,7 +23,7 @@ body {
 
 .sidebar {
     width: 220px;
-    background: #f0f2f5;
+    background: #bacdf2;
     padding: 2rem 1rem;
     border-right: 1px solid #e0e0e0;
 }
@@ -42,7 +42,7 @@ body {
     background: #e6eaf1;
 }
 .sidebar li.active {
-    background: #4f8cff;
+    background: #9CADCE;
     color: #fff;
     font-weight: bold;
 }
@@ -67,6 +67,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 2rem;
+    background-color: #d1cfe2;
 }
 #task-list, #stats {
     background: #fff;
@@ -76,7 +77,7 @@ body {
 }
 
 .footer {
-    background: #fff;
+    background: #D4AFB9;
     padding: 1rem 0;
     box-shadow: 0 -2px 4px rgba(0,0,0,0.03);
     text-align: center;
@@ -87,25 +88,26 @@ body {
 #pomodoro-timer {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 1rem;
-    background: #fff;
+    background: #d1cfe2;
     border-radius: 16px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     padding: 1.2rem 2rem;
     margin: 1.5rem auto 0 auto;
-    max-width: 600px;
+    max-width: 671px;
     font-size: 1.2rem;
 }
 #pomodoro-timer span#pomodoro-time {
     font-size: 2.2rem;
     font-weight: 700;
-    color: #2d7ff9;
+    color: #e25252;
     min-width: 90px;
     text-align: center;
     letter-spacing: 1px;
 }
 #pomodoro-timer button {
-    background: #2d7ff9;
+    background: #9CADCE;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -127,7 +129,7 @@ body {
     margin-left: 0.5rem;
 }
 #pomodoro-timer #pomodoro-settings-panel {
-    position: absolute;
+    /* position: inherit; */
     background: #fff;
     border: 1px solid #e6eaf1;
     border-radius: 12px;
@@ -171,68 +173,92 @@ body {
 .task {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid #f0f0f0;
-}
-.task:last-child {
-    border-bottom: none;
+    background: #f3f2f2;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,1);
+    margin-bottom: 1rem;
+    padding: 0.7rem 1.2rem;
+    font-size: 1.08rem;
+    transition: box-shadow 0.2s;
+    cursor: pointer;
+    min-height: 44px;
 }
 .task .circle {
-    width: 22px;
-    height: 22px;
-    border: 2px solid #4f8cff;
-    border-radius: 50%;
     display: inline-block;
-    cursor: pointer;
-    margin-right: 0.5rem;
+    width: 28px;
+    height: 28px;
+    border: 2px solid #d3d3d3;
+    border-radius: 50%;
+    margin-right: 0.7rem;
     background: #fff;
-    transition: background 0.2s, border 0.2s;
+    position: relative;
+    transition: border-color 0.2s, background 0.2s;
+    box-sizing: border-box;
 }
 .task.completed .circle {
-    background: #4f8cff;
-    border-color: #2563c9;
+    border-color: #2d7ff9;
+    background: #e6eaf1;
+}
+.task .circle::after {
+    content: '';
+    display: block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: transparent;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: background 0.2s;
+}
+.task.completed .circle::after {
+    background: #2d7ff9;
+}
+.task .pomodoro-dot {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 0.7rem;
+}
+.task .pomodoro-dot .dot {
+    width: 12px;
+    height: 12px;
+    background: #ff6b6b;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.1rem;
+    box-shadow: 0 0 2px #ff6b6b44;
 }
 .task .title {
     flex: 1;
-    font-size: 1.1rem;
+    font-weight: 500;
+    color: #222;
 }
 .task .due-date {
-    color: #e74c3c;
+    color: #ff6b6b;
     font-size: 1rem;
-    margin-left: 0.5rem;
-    font-weight: 600;
-    background: #fff0f0;
-    border-radius: 4px;
-    padding: 0.1rem 0.5rem;
-    letter-spacing: 0.5px;
-}
-.task.overdue .due-date {
-    background: #ffeaea;
-    color: #c0392b;
-    border: 1px solid #e74c3c;
-}
-.task.upcoming .due-date {
-    background: #e6f7ff;
-    color: #2563c9;
-    border: 1px solid #4f8cff;
-}
-.task button {
-    background: none;
-    border: none;
-    color: #e74c3c;
-    cursor: pointer;
-    font-size: 1rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    transition: background 0.2s;
-}
-.task button:hover {
-    background: #ffeaea;
+    margin-left: 1.2rem;
+    min-width: 60px;
+    text-align: right;
 }
 .task.completed .title {
     text-decoration: line-through;
     color: #aaa;
+}
+.task.completed .circle {
+    border-color: #2d7ff9;
+    background: #e6eaf1;
+}
+
+@media (max-width: 700px) {
+    .task {
+        font-size: 0.98rem;
+        padding: 0.6rem 0.7rem;
+    }
+    .task .due-date {
+        font-size: 0.95rem;
+        margin-left: 0.5rem;
+    }
 }
 .task-group {
     margin-bottom: 1.5rem;
@@ -408,6 +434,85 @@ body {
     text-align: right;
 }
 
+/* Task Details Panel Layout */
+.main-flex {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+#task-list {
+    flex: 45 1 0;
+    min-width: 0;
+}
+.task-details-panel {
+    flex: 1 1 320px;
+    min-width: 260px;
+    background: #f3f2f2;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,1);
+    padding: 1.2rem 1.5rem;
+    margin-left: 1rem;
+    min-height: 300px;
+    max-width: 400px;
+}
+.empty-details {
+    color: #aaa;
+    text-align: center;
+    margin-top: 2rem;
+}
+.details-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin-bottom: 1rem;
+}
+.details-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2d7ff9;
+}
+.details-project {
+    font-size: 1rem;
+    color: #888;
+}
+.details-row {
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+.details-row textarea {
+    width: 100%;
+    min-height: 60px;
+    border-radius: 8px;
+    border: 1px solid #e6eaf1;
+    padding: 0.5rem;
+    font-size: 1rem;
+    margin-top: 0.3rem;
+}
+.details-subtasks {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.5rem 0;
+}
+.details-subtasks li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+}
+.details-subtasks li.completed span {
+    text-decoration: line-through;
+    color: #aaa;
+}
+.details-subtasks input[type="checkbox"] {
+    accent-color: #2d7ff9;
+}
+.details-subtasks button {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
 @media (max-width: 800px) {
     .container {
         flex-direction: column;
@@ -438,5 +543,15 @@ body {
         right: 0;
         margin: 1rem auto 0 auto;
         width: 90%;
+    }
+}
+@media (max-width: 900px) {
+    .main-flex {
+        flex-direction: column;
+    }
+    .task-details-panel {
+        margin-left: 0;
+        margin-top: 1.5rem;
+        max-width: 100%;
     }
 }

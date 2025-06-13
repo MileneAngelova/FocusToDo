@@ -309,7 +309,7 @@ function renderTaskList() {
             `<div class="task-group"><div class="group-label">${date}</div><ul class="tasks">` +
             group.map(task =>
                 `<li class="task${task.completed ? ' completed' : ''}" onclick="renderTaskDetails('${task.id}')">
-                    <span class="circle"></span>
+                    <span class="circle" onclick="event.stopPropagation(); toggleTaskCompletion('${task.id}')"></span>
                     <span class="pomodoro-dot"><span class="dot"></span></span>
                     <span class="title">${task.title}</span>
                     <span class="due-date">${task.dueDate ? new Date(task.dueDate).toLocaleDateString(undefined, { day: '2-digit', month: 'short' }) : ''}</span>
@@ -386,14 +386,8 @@ function renderPomodoroControls() {
     document.getElementById('long-break').onclick = startLongBreak;
     document.getElementById('pomodoro-settings').onclick = function() {
         const panel = document.getElementById('pomodoro-settings-panel');
-        // Toggle settings panel position for mobile/desktop
         if (panel.style.display === 'none') {
             panel.style.display = 'flex';
-            // Position panel below the settings button
-            const btnRect = this.getBoundingClientRect();
-            panel.style.position = 'absolute';
-            panel.style.left = btnRect.left + 'px';
-            panel.style.top = (btnRect.bottom + window.scrollY + 8) + 'px';
         } else {
             panel.style.display = 'none';
         }
@@ -407,17 +401,6 @@ function renderPomodoroControls() {
         renderPomodoroControls();
     };
     updatePomodoroDisplay();
-
-    // Hide settings panel when clicking outside
-    document.addEventListener('mousedown', function hidePomodoroSettings(e) {
-        const panel = document.getElementById('pomodoro-settings-panel');
-        const btn = document.getElementById('pomodoro-settings');
-        if (panel && btn && panel.style.display !== 'none') {
-            if (!panel.contains(e.target) && e.target !== btn) {
-                panel.style.display = 'none';
-            }
-        }
-    });
 }
 
 function startPomodoro() {
