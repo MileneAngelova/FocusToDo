@@ -378,7 +378,17 @@ function renderPomodoroControls() {
     document.getElementById('long-break').onclick = startLongBreak;
     document.getElementById('pomodoro-settings').onclick = function() {
         const panel = document.getElementById('pomodoro-settings-panel');
-        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        // Toggle settings panel position for mobile/desktop
+        if (panel.style.display === 'none') {
+            panel.style.display = 'flex';
+            // Position panel below the settings button
+            const btnRect = this.getBoundingClientRect();
+            panel.style.position = 'absolute';
+            panel.style.left = btnRect.left + 'px';
+            panel.style.top = (btnRect.bottom + window.scrollY + 8) + 'px';
+        } else {
+            panel.style.display = 'none';
+        }
     };
     document.getElementById('save-pomodoro-settings').onclick = function() {
         pomodoroDuration = Math.max(1, parseInt(document.getElementById('pomodoro-mins').value, 10)) * 60;
@@ -389,6 +399,17 @@ function renderPomodoroControls() {
         renderPomodoroControls();
     };
     updatePomodoroDisplay();
+
+    // Hide settings panel when clicking outside
+    document.addEventListener('mousedown', function hidePomodoroSettings(e) {
+        const panel = document.getElementById('pomodoro-settings-panel');
+        const btn = document.getElementById('pomodoro-settings');
+        if (panel && btn && panel.style.display !== 'none') {
+            if (!panel.contains(e.target) && e.target !== btn) {
+                panel.style.display = 'none';
+            }
+        }
+    });
 }
 
 function startPomodoro() {
