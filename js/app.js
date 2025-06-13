@@ -8,7 +8,7 @@ class Task {
         this.title = title;
         this.dueDate = dueDate;
         this.project = project;
-        this.subtasks = subtasks;
+        this.subtasks = subtasks; // Array of { id, title, completed }
         this.notes = notes;
         this.completed = completed;
     }
@@ -57,6 +57,42 @@ function toggleTaskCompletion(id) {
     const task = tasks.find(t => t.id === id);
     if (task) {
         task.completed = !task.completed;
+        renderTaskList();
+    }
+}
+
+// Add Subtask
+function addSubtask(taskId, subtaskTitle) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task && subtaskTitle) {
+        task.subtasks.push({ id: generateId(), title: subtaskTitle, completed: false });
+        renderTaskList();
+    }
+}
+// Toggle Subtask Completion
+function toggleSubtaskCompletion(taskId, subtaskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        const subtask = task.subtasks.find(st => st.id === subtaskId);
+        if (subtask) {
+            subtask.completed = !subtask.completed;
+            renderTaskList();
+        }
+    }
+}
+// Delete Subtask
+function deleteSubtask(taskId, subtaskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        task.subtasks = task.subtasks.filter(st => st.id !== subtaskId);
+        renderTaskList();
+    }
+}
+// Update Notes
+function updateTaskNotes(taskId, notes) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        task.notes = notes;
         renderTaskList();
     }
 }
@@ -143,6 +179,23 @@ function renderTaskList() {
                     <span class="title">${task.title}</span>
                     <span class="due-date">${task.dueDate ? task.dueDate : ''}</span>
                     <button onclick="deleteTask('${task.id}')">Delete</button>
+                    <div class="subtasks">
+                        <strong>Subtasks:</strong>
+                        <ul>
+                            ${task.subtasks.map(st => `
+                                <li class="subtask${st.completed ? ' completed' : ''}">
+                                    <input type="checkbox" ${st.completed ? 'checked' : ''} onclick="toggleSubtaskCompletion('${task.id}', '${st.id}')">
+                                    <span>${st.title}</span>
+                                    <button onclick="deleteSubtask('${task.id}', '${st.id}')">x</button>
+                                </li>
+                            `).join('')}
+                        </ul>
+                        <input type="text" placeholder="Add subtask..." onkeydown="if(event.key==='Enter'){addSubtask('${task.id}', this.value); this.value='';}">
+                    </div>
+                    <div class="notes">
+                        <strong>Notes:</strong>
+                        <textarea placeholder="Add notes..." onchange="updateTaskNotes('${task.id}', this.value)">${task.notes || ''}</textarea>
+                    </div>
                 </li>
             `).join('') +
             '</ul></div>'
@@ -154,6 +207,10 @@ function renderTaskList() {
 // Expose functions for inline event handlers
 window.toggleTaskCompletion = toggleTaskCompletion;
 window.deleteTask = deleteTask;
+window.addSubtask = addSubtask;
+window.toggleSubtaskCompletion = toggleSubtaskCompletion;
+window.deleteSubtask = deleteSubtask;
+window.updateTaskNotes = updateTaskNotes;
 
 // Initial render
 window.onload = function() {
